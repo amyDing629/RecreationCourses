@@ -1,0 +1,467 @@
+csc343h-guojian2=> \i phase2
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+ 
+csc343h-guojian2=> \d
+           List of relations
+ Schema |    Name    | Type  |  Owner   
+--------+------------+-------+----------
+ public | courses    | table | guojian2
+ public | facilities | table | guojian2
+ public | limits     | table | guojian2
+ public | locations  | table | guojian2
+ public | programs   | table | guojian2
+ public | times      | table | guojian2
+ public | wards      | table | guojian2
+(7 rows)
+csc343h-guojian2=> \d courses
+                          Table "public.courses"
+      Column       |          Type          | Collation | Nullable | Default 
+-------------------+------------------------+-----------+----------+---------
+ course_barcode    | integer                |           | not null | 
+ name              | character varying(100) |           | not null | 
+ location          | character varying(100) |           |          | 
+ facility          | character varying(100) |           |          | 
+ timeid            | integer                |           |          | 
+ program           | character varying(100) |           | not null | 
+ course_type       | character varying(100) |           |          | 
+ number_of_classes | integer                |           | not null | 
+ limitid           | integer                |           |          | 
+ course_waitlist   | integer                |           | not null | 
+ course_reg        | integer                |           | not null | 
+ visits            | integer                |           | not null | 
+Indexes:
+    "courses_pkey" PRIMARY KEY, btree (course_barcode)
+Check constraints:
+    "courses_course_type_check" CHECK (course_type::text = ANY (ARRAY['Regular'::character varying, 'Drop-In'::character varying]::text[]))
+Foreign-key constraints:
+    "courses_limitid_fkey" FOREIGN KEY (limitid) REFERENCES limits(limitid) ON UPDATE CASCADE ON DELETE CASCADE
+    "courses_location_facility_fkey" FOREIGN KEY (location, facility) REFERENCES facilities(location, facility) ON UPDATE CASCADE ON DELETE CASCADE
+    "courses_program_fkey" FOREIGN KEY (program) REFERENCES programs(program) ON UPDATE CASCADE ON DELETE CASCADE
+    "courses_timeid_fkey" FOREIGN KEY (timeid) REFERENCES times(timeid) ON UPDATE CASCADE ON DELETE CASCADE
+
+
+csc343h-guojian2=> \d facilities;
+                          Table "public.facilities"
+      Column       |          Type          | Collation | Nullable | Default 
+-------------------+------------------------+-----------+----------+---------
+ location          | character varying(100) |           | not null | 
+ facility          | character varying(100) |           | not null | 
+ facility_type     | character varying(100) |           | not null | 
+ facility_district | character varying(50)  |           | not null | 
+Indexes:
+    "facilities_pkey" PRIMARY KEY, btree (location, facility)
+Foreign-key constraints:
+    "facilities_location_fkey" FOREIGN KEY (location) REFERENCES locations(location) ON UPDATE CASCADE ON DELETE CASCADE
+
+csc343h-guojian2=> \d limits;
+                    Table "public.limits"
+ Column  |       Type       | Collation | Nullable | Default 
+---------+------------------+-----------+----------+---------
+ limitid | integer          |           | not null | 
+ min_age | double precision |           | not null | 
+ max_age | double precision |           | not null | 
+ min_reg | integer          |           | not null | 
+ max_reg | integer          |           | not null | 
+Indexes:
+    "limits_pkey" PRIMARY KEY, btree (limitid)
+Check constraints:
+    "limits_check" CHECK (min_age >= 0::double precision AND max_age >= 0::double precision AND min_reg >= 0 AND max_reg >= 0)
+Referenced by:
+    TABLE "courses" CONSTRAINT "courses_limitid_fkey" FOREIGN KEY (limitid) REFERENCES limits(limitid) ON UPDATE CASCADE ON DELETE CASCADE
+
+csc343h-guojian2=> \d locations
+                       Table "public.locations"
+   Column    |          Type          | Collation | Nullable | Default 
+-------------+------------------------+-----------+----------+---------
+ location    | character varying(100) |           | not null | 
+ postal_code | character varying(7)   |           | not null | 
+ ward        | integer                |           |          | 
+Indexes:
+    "locations_pkey" PRIMARY KEY, btree (location)
+Foreign-key constraints:
+    "locations_ward_fkey" FOREIGN KEY (ward) REFERENCES wards(ward) ON UPDATE CASCADE ON DELETE CASCADE
+Referenced by:
+    TABLE "courses" CONSTRAINT "courses_location_fkey" FOREIGN KEY (location) REFERENCES locations(location) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "facilities" CONSTRAINT "facilities_location_fkey" FOREIGN KEY (location) REFERENCES locations(location) ON UPDATE CASCADE ON DELETE CASCADE
+
+csc343h-guojian2=> \d programs
+                       Table "public.programs"
+   Column   |          Type          | Collation | Nullable | Default 
+------------+------------------------+-----------+----------+---------
+ program    | character varying(100) |           | not null | 
+ section    | character varying(100) |           | not null | 
+ subsection | character varying(20)  |           | not null | 
+Indexes:
+    "programs_pkey" PRIMARY KEY, btree (program)
+Check constraints:
+    "program_subsection_check" CHECK (subsection::text = ANY (ARRAY['All Ages'::character varying, 'Adult'::character varying, 'Youth/Adult'::character varying, 'Older Adult'::character varying, 'Early Child'::character varying, 'Child/Youth'::character varying, 'Youth'::character varying, 'Child'::character varying]::text[]))
+Referenced by:
+    TABLE "courses" CONSTRAINT "courses_program_fkey" FOREIGN KEY (program) REFERENCES programs(program) ON UPDATE CASCADE ON DELETE CASCADE
+
+csc343h-guojian2=> \d times
+                            Table "public.times"
+      Column      |          Type          | Collation | Nullable | Default 
+------------------+------------------------+-----------+----------+---------
+ timeid           | integer                |           | not null | 
+ reg_session      | character varying(7)   |           |          | 
+ days_of_the_week | character varying(100) |           | not null | 
+ startmonth       | character varying(10)  |           |          | 
+ startday         | integer                |           |          | 
+ start_hour       | integer                |           |          | 
+ num_of_weeks     | integer                |           |          | 
+ course_hours     | double precision       |           |          | 
+Indexes:
+    "times_pkey" PRIMARY KEY, btree (timeid)
+Check constraints:
+    "times_course_hours_check" CHECK (course_hours >= 0.0::double precision)
+    "times_num_of_weeks_check" CHECK (num_of_weeks >= 0)
+    "times_reg_session_check" CHECK (reg_session::text = ANY (ARRAY['Spring'::character varying, 'Summer'::character varying, 'Fall'::character varying, 'Winter'::character varying]::text[]))
+    "times_start_hour_check" CHECK (start_hour >= 0 AND start_hour <= 23)
+    "times_startday_check" CHECK (startday >= 0 AND startday <= 31)
+    "times_timeid_check" CHECK (timeid >= 0)
+Referenced by:
+    TABLE "courses" CONSTRAINT "courses_timeid_fkey" FOREIGN KEY (timeid) REFERENCES times(timeid) ON UPDATE CASCADE ON DELETE CASCADE
+
+csc343h-guojian2=> \d wards
+                       Table "public.wards"
+ Column |          Type          | Collation | Nullable | Default 
+--------+------------------------+-----------+----------+---------
+ ward   | integer                |           | not null | 
+ name   | character varying(100) |           | not null | 
+ area   | double precision       |           | not null | 
+Indexes:
+    "wards_pkey" PRIMARY KEY, btree (ward)
+Check constraints:
+    "wards_area_check" CHECK (area >= 0::double precision)
+Referenced by:
+    TABLE "locations" CONSTRAINT "locations_ward_fkey" FOREIGN KEY (ward) REFERENCES wards(ward) ON UPDATE CASCADE ON DELETE CASCADE
+
+csc343h-guojian2=> select count(*) from courses;
+ count 
+-------
+ 72448
+(1 row)
+
+csc343h-guojian2=> select count(*) from facilities;
+ count 
+-------
+  1780
+(1 row)
+
+csc343h-guojian2=> select count(*) from limits;
+ count 
+-------
+  4127
+(1 row)
+
+csc343h-guojian2=> select count(*) from locations;
+ count 
+-------
+   496
+(1 row)
+
+csc343h-guojian2=> select count(*) from programs;
+ count 
+-------
+   450
+(1 row)
+
+csc343h-guojian2=> select count(*) from times;
+ count 
+-------
+ 13948
+(1 row)
+
+csc343h-guojian2=> select count(*) from wards;
+ count 
+-------
+    44
+(1 row)
+
+
+ course_barcode |                             name                             |                 location                 |                 facility                 | timeid |                         program                         | course_type | number_of_classes | limitid | course_waitlist | course_reg | visits 
+----------------+--------------------------------------------------------------+------------------------------------------+------------------------------------------+--------+---------------------------------------------------------+-------------+-------------------+---------+-----------------+------------+--------
+        2644565 | Ultra Swim 3                                                 | Parkdale Community Recreation Centre     | Pool (B)                                 |   8438 | Ultra Swim 3                                            | Regular     |                 9 |    3839 |               0 |          5 |     45
+        2723197 | Cardio High/Low                                              | Douglas Snow Aquatic Centre              | Multi-Purpose Room (C)                   |   9288 | Cardio - Adult                                          | Regular     |                10 |    3592 |               0 |          9 |    118
+        2748519 | Dance: Ballet                                                | Hollycrest CS                            | Classroom 15                             |   7769 | Dance - Early Child                                     | Regular     |                 9 |    1845 |               0 |          7 |     63
+        2733609 | Soccer                                                       | Bedford Park Community Centre            | Gym (B)                                  |  12896 | Sports - Early Child                                    | Regular     |                 9 |    2557 |               0 |          8 |     72
+        2728170 | Tiny Tots Swim                                               | Toronto Pan Am Sports Centre             | Training Pool - Shallow Lane 6           |  13507 | Tiny Tots Swim                                          | Regular     |                 9 |    2982 |               0 |          1 |      9
+        2711706 | Dance: Hip Hop                                               | John Innes Community Recreation Centre   | Dance Studio (C)                         |   6511 | Dance - Early Child                                     | Regular     |                 9 |    3326 |              11 |          9 |     81
+        2735902 | Lane Swim                                                    | Toronto Pan Am Sports Centre             | Training Pool                            |   2020 | DROP-IN: Swimming - Adult                               | Drop-In     |                57 |    2848 |               0 |          0 |   6593
+        2792808 | Lane Swim                                                    | Toronto Pan Am Sports Centre             | Training Pool                            |  10706 | DROP-IN: Swimming - Adult                               | Drop-In     |                13 |    2195 |               0 |          0 |   1069
+        2850954 | DROP-IN: Weight Room/Fitness Centre - Adult                  | Gus Ryder Pool And Health Club           | Health Club Gym (B)                      |   5425 | DROP-IN: Weight Room/Fitness Centre - Adult             | Drop-In     |                89 |    3458 |               0 |          0 |   6879
+        2682582 | Lane Swim - Patio Pool                                       | Etobicoke Olympium                       | Patio Pool (B)-Indoor                    |   7542 | DROP-IN: Swimming - Adult                               | Drop-In     |                73 |    2195 |               0 |          0 |   3394
+        2763994 | Lane Swim - Patio Pool                                       | Etobicoke Olympium                       | Patio Pool (B)-Indoor                    |   4424 | DROP-IN: Swimming - Adult                               | Drop-In     |                98 |    3243 |               0 |          0 |   4670
+        2726864 | DROP-IN: Weight Room/Fitness Centre - Adult                  | St. Lawrence Community Recreation Centre | Weightroom (B)                           |   1138 | DROP-IN: Weight Room/Fitness Centre - Adult             | Drop-In     |                 9 |    3157 |               0 |          0 |    162
+        2726804 | DROP-IN: Weight Room/Fitness Centre - Adult                  | St. Lawrence Community Recreation Centre | Weightroom (B)                           |  11438 | DROP-IN: Weight Room/Fitness Centre - Adult             | Drop-In     |                36 |    3157 |               0 |          0 |    717
+        2639189 | DROP IN-Weightroom/Fitness Centre Adult                      | St. Lawrence Community Recreation Centre | Weightroom (B)                           |   2250 | DROP-IN: Weight Room/Fitness Centre - Adult             | Drop-In     |                11 |    3458 |               0 |          0 |    220
+        2726898 | DROP-IN: Weight Room/Fitness Centre: Adult                   | St. Lawrence Community Recreation Centre | Weightroom (B)                           |   5177 | DROP-IN: Weight Room/Fitness Centre - Adult             | Drop-In     |                10 |    3157 |               0 |          0 |    387
+        2771850 | DROP-IN: Weight Room/Fitness Centre - Adult                  | St. Lawrence Community Recreation Centre | Weightroom (B)                           |   7388 | DROP-IN: Weight Room/Fitness Centre - Adult             | Drop-In     |                12 |     586 |               0 |          0 |    369
+        2716397 | Aquafit: Sports Conditioning                                 | Memorial Pool And Health Club            | Pool (A)-Indoor                          |  11568 | Aquafit - Adult                                         | Regular     |                 9 |    3931 |               0 |          3 |    104
+        2656342 | Adult Swim: Swim Fit                                         | Main Square Community Centre             | Pool (B)                                 |   9637 | Adult Swim: Swim Fit                                    | Regular     |                24 |     222 |               0 |         25 |    600
+        2698036 | Adult Swim: Swim Fit                                         | Main Square Community Centre             | Pool (B)                                 |  12035 | Adult Swim: S:
+:
+                 location                 |                 facility                 |      facility_type       | facility_district 
+------------------------------------------+------------------------------------------+--------------------------+-------------------
+ Fairfield Seniors' Centre                | Room 2 - Multipurpose (C)                | Room - C                 | West District
+ Oakcrest Parkette                        | Wading Pool                              | Pool-Wading              | South District
+ Beaches Recreation Centre                | Back Field 2                             | Field                    | South District
+ Oakdale Park MS                          | Summer Camp Location                     | Room-School              | North District
+ Parkway Forest Community Centre          | Meeting  Room #1 (B)                     | Room - B                 | North District
+ West Deane Park                          | AIR - Martin Grove Rink                  | Rink-Outdoor             | West District
+ Holy Redeemer CSS                        | Summer Camp Location                     | Gymnasium                | North District
+ Cedarbrook Community Centre              | Room 2 (C)                               | Room - C                 | East District
+ Ellesmere Community Centre               | Craft Room (C)                           | Room - C                 | East District
+ Wellesley Community Centre               | Weight Room                              | Room-Fitness/Weight      | South District
+ Hollycrest CS                            | Classroom 1                              | Room-School              | West District
+ Pine Point Park - Outdoor Pool           | Pool (A)-Outdoor                         | Pool - Outdoor - A       | West District
+ Norseman Community School And Pool       | U.A. Room                                | Room                     | West District
+ Humberwood Community Centre              | Room 1017 (B)                            | Room - B                 | West District
+ Terry Fox ES                             | Gym                                      | Gymnasium                | East District
+ Dennis R.Timbrell Resource Centre        | Room 3 (C)                               | Room - C                 | North District
+ Claireville Day Camp                     | Youth Area                               | Campground               | West District
+ John Innes Community Recreation Centre   | Pool DE1                                 | Pool - Indoor - C        | South District
+ Carmine Stefano Community Centre         | Room 209 - Dance Studio (C)              | Room - C                 | West District
+ Stephen Leacock Seniors Community Centre | Kitchen (B)                              | Kitchen                  | East District
+ Pelmo Park Community Centre              | Meeting Room 2 (B)                       | Room - B                 | West District
+ Bendale Business Technical Institute     | Pool DE2                                 | Pool - Indoor - A        | East District
+ Secord Community Centre                  | Gym - Upstairs (C)                       | Room - C                 | South District
+ Bloordale Community School               | Gym 2                                    | Gymnasium                | West District
+ Bloordale Community School               | Classroom 101                            | Room-School              | West District
+ St. Nicholas CS                          | Gymnasium                                | Gymnasium                | East District
+ Blessed Kateri Tekakwitha CSS            | Gym                                      | Gymnasium                | North District
+ Dovercourt Park                          | Wading Pool                              | Pool-Wading              | South District
+ Norseman Community School And Pool       | Pool (B) - SE1                           | Pool - Indoor - B        | West District
+ Toronto Pan Am Sports Centre             | Gymnasium 2                              | Gymnasium                | East District
+ Roding Community Centre                  | Multipurpose Room (B)                    | Room - B                 | North District
+ Lawrence Heights Community Centre        | Room 5 (C)                               | Room - C                 | North District
+ Ramsden Park                             | AIR - Rink 1 (A) (boards)                | Rink-Outdoor             | South District
+ Milliken Park Community Recreation       | Preschool (C)                            | Room - C                 | East District
+ Rosedale Park                            | AIR - Rink                               | Rink-Outdoor             | South District
+ Antibes Community Centre                 | Parking Lot                              | Parking Lot              | North District
+ Thistletown Seniors' Ctr                 | Unified Arts Room                        | Room-Craft               | West District
+ Rivercrest Rink                          | AIR - Rink                               | Rink-Outdoor             | West District
+ Don Montgomery Community Centre          | Snack Bar Area (B)                       | Room - B                 | East District
+:
+ limitid | min_age | max_age | min_reg | max_reg 
+---------+---------+---------+---------+---------
+       1 |      18 |     120 |       7 |      15
+       2 |       8 |       9 |       6 |      22
+       3 |       8 |       9 |       8 |      16
+       4 |    0.08 |       5 |      10 |      30
+       5 |       4 |       5 |       1 |      24
+       6 |       7 |      12 |       8 |      16
+       7 |       8 |      12 |       2 |       3
+       8 |       7 |      12 |       5 |      14
+       9 |      12 |      15 |      10 |      20
+      10 |      16 |     120 |       6 |      20
+      11 |      60 |     120 |       6 |      10
+      12 |       8 |      13 |       6 |      10
+      13 |      10 |      12 |       1 |      40
+      14 |      18 |     120 |      16 |      48
+      15 |       9 |      12 |       6 |      10
+      16 |       6 |      16 |       6 |      10
+      17 |      13 |     120 |      12 |      33
+      18 |       5 |      17 |       2 |       8
+      19 |       6 |       7 |      10 |      20
+      20 |      11 |      17 |       6 |      12
+      21 |       9 |      17 |       1 |       1
+      22 |       6 |     120 |       4 |       8
+      23 |       6 |      12 |      16 |      20
+      24 |       6 |      12 |      20 |      40
+      25 |       9 |      10 |      10 |      30
+      26 |      15 |     120 |       5 |      20
+      27 |      13 |      24 |       1 |      70
+      28 |      18 |     120 |      15 |      35
+      29 |       9 |     120 |       1 |       1
+      30 |       6 |       8 |       5 |      42
+      31 |      18 |     120 |       1 |      30
+      32 |       6 |       9 |      15 |      40
+      33 |     1.5 |       3 |       5 |       8
+      34 |     0.5 |       1 |       8 |      12
+      35 |      60 |     120 |       6 |      30
+      36 |       5 |      17 |       4 |       6
+      37 |      16 |     120 |       6 |      40
+      38 |       4 |       7 |       1 |       3
+      39 |     0.5 |     1.5 |       1 |       1
+:
+                 location                 | postal_code | ward 
+------------------------------------------+-------------+------
+ Earl Bales Ski and Snowboard Centre      | M3H 3P7     |   10
+ Iroquois JES                             | M1S 2S6     |   41
+ Markdale Preschool Site                  | M6C 1T3     |   21
+ Glen Ravine Park                         | M1K 4P7     |   37
+ Leaside Memorial Gardens Pool            | M4G 1X6     |   26
+ Royalcrest Rink - Outdoor Artificial Ice | M9W 5A3     |    1
+ Gracedale Public School                  | M9L 2C1     |    7
+ Rexlington Park                          | M9W 1V9     |    2
+ Weston CI                                | M9N 2Y9     |   11
+ Annette Community Recreation Centre      | M6P 1B3     |   13
+ Regent Park North                        | M1P 4N7     |   28
+ West Rouge Community Centre              | M1C 2Z1     |   44
+ Matty Eckler Recreation Centre           | M4M 1Z4     |   30
+ Monarch Park                             | M4J 1G3     |   30
+ Victoria Park SS                         | M3A 2V1     |   34
+ Islington CS                             | M9A 2H5     |    5
+ Scarborough Village Recreation Centre    | M1M 1R9     |   36
+ Ashtonbee Reservoir Park                 | M5H 2N2     |   37
+ Campbell Avenue Playground               | M1P 4N7     |   18
+ Centennial Rd  JES                       | M1C 2A2     |   44
+ Blantyre Park                            | M1N 2T6     |   36
+ Sir Casimir Gzowski Park                 | M6S 5A3     |   13
+ Spencer - Cowan Parkette                 | M6K 2J6     |   14
+ Fenside Arena                            | M3A 2C4     |   34
+ Westway Outdoor Rink                     | M9P 2C2     |    4
+ Thistletown Community Centre             | M9V 1A6     |    1
+ Joseph Bannon Park                       | M9C 2Y2     |    7
+ West Deane Park - Outdoor Pool           | M9B 2X2     |    3
+ West Deane Park                          | M9B 4M1     |    3
+ Don Mills CI                             | M3C 1X6     |   34
+ West Hill Collegiate Institute           | M1E 3G3     |   43
+ Carmine Stefano Community Centre         | M9M 2S7     |    7
+ Glen Ravine JES                          | M1K 4V4     |   37
+ Amesbury Park                            | M6L 1A8     |   12
+ Wellesley Community Centre               | M4X 1K7     |   28
+ Gord And Irene Risk Community Centre     | M9M 3A3     |    7
+ Avondale Public School                   | M2N 2V4     |   23
+ Lambton Arena                            | M6S 2T7     |   13
+ Beaches Recreation Centre                | M4E 1K5     |   32
+:
+                         program                         |      section       | subsection  
+---------------------------------------------------------+--------------------+-------------
+ Older Adult Swim 2                                      | Swimming           | Older Adult
+ Learn to Skate Adult                                    | Skating            | Adult
+ Soccer - Youth                                          | Sports             | Youth
+ Guitar - Private - Child                                | Arts & Heritage    | Child/Youth
+ Adult Swim 2                                            | Swimming           | Adult
+ Ski Youth/Adult 6hrs No Rental                          | Ski                | Youth/Adult
+ Child Care for Fitness Programs                         | Fitness & Wellness | All Ages
+ Yoga - Older Adult                                      | Fitness & Wellness | Older Adult
+ Gymnastics - Youth                                      | Sports             | Youth
+ Workshops/Clinics - Youth                               | Sports             | Youth
+ Snb Child 6hrs With Rental                              | Ski                | Child
+ Hockey Skills / Power Skate Child                       | Skating            | Child/Youth
+ Adult Swim 2 - Female                                   | Swimming           | Adult
+ Cardio Dance - Older Adult                              | Fitness & Wellness | Older Adult
+ Ultra Swim 2                                            | Swimming           | Child/Youth
+ Ultra Swim 5                                            | Swimming           | Child/Youth
+ Ultra Swim 6                                            | Swimming           | Child/Youth
+ Hip Hop - Adult                                         | Arts & Heritage    | Adult
+ DROP-IN: General Interest - Youth                       | General Interest   | Youth
+ Fitness/Cardio - Adult                                  | Fitness & Wellness | Adult
+ Pilates - Youth                                         | Fitness & Wellness | Youth
+ DROP-IN: Walking/Running Track - Older Adult            | Fitness & Wellness | Older Adult
+ Guitar - Group - Child                                  | Arts & Heritage    | Child/Youth
+ Learn to Skate Child - Level 1                          | Skating            | Child
+ MB Camp Specialty Early Child - All Day                 | March Break        | Early Child
+ Guardian Swim 2                                         | Swimming           | Early Child
+ Cooking - Child                                         | General Interest   | Child/Youth
+ Babysitting - Youth                                     | Leadership         | Youth
+ Ski 1/2 DayCamp ErlyChd 5day No Rental                  | Ski                | Early Child
+ Tiny Tots Swim                                          | Swimming           | Early Child
+ Camp Specialty Plus Early Child                         | Camps              | Early Child
+ Guitar Private with Lesson Book                         | Arts & Heritage    | Child/Youth
+ Learn to Skate Child                                    | Skating            | Child/Youth
+ Visual Arts - Youth                                     | Arts & Heritage    | Youth
+ Guardian Swim 1 - Female                                | Swimming           | Early Child
+ MB Camp Adventure Youth - All Day Basic                 | March Break        | Youth
+ Games/Cards - Child                                     | General Interest   | Child/Youth
+ Special Events - All Ages                               | General Interest   | All Ages
+ Guardian Swim                                           | Swimming           | Early Child
+:
+ timeid | reg_session |    days_of_the_week     | startmonth | startday | start_hour | num_of_weeks | course_hours 
+--------+-------------+-------------------------+------------+----------+------------+--------------+--------------
+      1 | Spring      | Th                      | Apr        |        2 |         18 |            9 |        24.75
+      2 | Winter      | Th                      | Jan        |       15 |         11 |           11 |           10
+      3 | Summer      | M  Tu  W  Th  F         | Jun        |       29 |          9 |            2 |           18
+      4 | Summer      | Tu  F                   | Jun        |       30 |          9 |           13 |           78
+      5 | Summer      | M  Tu  W  Th            | Aug        |       10 |         18 |            2 |            8
+      6 | Winter      | Sa                      | Jan        |       17 |         13 |           11 |         16.5
+      7 | Fall        | Su                      | Oct        |        4 |          8 |            9 |           27
+      8 | Spring      | F                       | Mar        |       27 |         19 |            9 |         2.25
+      9 | Summer      | Su                      | May        |       31 |         12 |            1 |            4
+     10 | Spring      | Tu                      | Mar        |       31 |         11 |            9 |            9
+     11 | Spring      | Sa                      | Apr        |        4 |         17 |           14 |           23
+     12 | Fall        | M  W  F                 | Nov        |       30 |         17 |            6 |           16
+     13 | Winter      | Th                      | Jan        |        8 |         18 |            8 |            6
+     14 | Spring      | Su  M  W                | Mar        |       30 |         19 |           12 |           85
+     15 | Summer      | Tu                      | Jun        |       30 |         19 |           10 |            5
+     16 | Winter      | Th  Sa                  | Jan        |        3 |         18 |           14 |           36
+     17 | Winter      | M                       | Jan        |        5 |          9 |            9 |           20
+     18 | Fall        | Tu                      | Sep        |       29 |         19 |           13 |         32.5
+     19 | Fall        | F                       | Oct        |        2 |         16 |           12 |           30
+     20 | Spring      | M                       | Apr        |       20 |         17 |            9 |            9
+     21 | Winter      | Tu                      | Jan        |       20 |         18 |            9 |         6.75
+     22 | Spring      | Sa                      | Apr        |        4 |         12 |            9 |        15.75
+     23 | Spring      | Su  M  Tu  W  Th  F  Sa | Mar        |       30 |         20 |           13 |           82
+     24 | Spring      | Th                      | Apr        |        2 |         17 |            9 |         2.25
+     25 | Fall        | W                       | Dec        |        2 |         15 |            7 |         6.25
+     26 | Spring      | Sa                      | May        |        2 |         13 |            8 |            8
+     27 | Spring      | Sa                      | Mar        |       28 |         15 |            9 |            9
+     28 | Winter      | W                       | Jan        |       14 |         11 |           10 |           15
+     29 | Summer      | M                       | Jun        |       29 |         18 |            8 |            6
+     30 | Winter      | Th                      | Jan        |        8 |         20 |            9 |          4.5
+     31 | Fall        | M                       | Sep        |       28 |         16 |           11 |           20
+     32 | Spring      | Th                      | Apr        |        2 |         19 |           12 |           21
+     33 | Spring      | Th                      | Apr        |        2 |         17 |            8 |            8
+     34 | Fall        | Su                      | Sep        |       27 |          9 |           10 |           10
+     35 | Spring      | Th                      | Apr        |        2 |         17 |            9 |          4.5
+     36 | Fall        | Su  M  Tu  Th  F  Sa    | Nov        |       28 |         19 |            6 |           80
+     37 | Fall        | W  F                    | Sep        |       30 |         17 |            9 |           18
+     38 | Spring      | Tu                      | Mar        |       31 |         15 |            9 |           18
+     39 | Summer      | Su  M  Tu  W  Th  F  Sa | Jun        |       26 |         14 |           11 |          168
+:
+ ward |          name           | area 
+------+-------------------------+------
+    1 | Etobicoke North         | 17.4
+    2 | Etobicoke North         | 31.8
+    3 | Etobicoke Centre        | 17.3
+    4 | Etobicoke Centre        | 16.9
+    5 | Etobicoke-Lakeshore     | 24.5
+    6 | Etobicoke-Lakeshore     | 17.6
+    7 | York West               | 20.3
+    8 | York West               | 16.5
+    9 | York Centre             | 14.6
+   10 | York Centre             | 15.3
+   11 | York South-Weston       |   13
+   12 | York South-Weston       |   12
+   13 | Parkdale-High Park      | 10.3
+   14 | Parkdale-High Park      |  5.4
+   15 | Eglinton-Lawrence       | 12.5
+   16 | Eglinton-Lawrence       | 10.2
+   17 | Davenport               |  6.6
+   18 | Davenport               |  4.7
+   19 | Trinity-Spadina         |  6.9
+   20 | Trinity-Spadina         |  7.5
+   21 | St. Paul's              |  6.6
+   22 | St. Paul's              |  8.6
+   23 | Willowdale              | 14.9
+   24 | Willowdale              | 17.7
+   25 | Don Valley West         | 23.7
+   26 | Don Valley West         | 10.9
+   27 | Toronto Centre-Rosedale |  8.3
+   28 | Toronto Centre-Rosedale |  9.2
+   29 | Broadview-Greenwood     |  7.9
+   30 | Broadview-Greenwood     | 12.3
+   31 | Beaches-East York       |  8.9
+   32 | Beaches-East York       |  9.5
+   33 | Don Valley East         | 10.8
+   34 | Don Valley East         | 15.9
+   35 | Scarborough Southwest   | 13.7
+   36 | Scarborough Southwest   | 15.7
+   37 | Scarborough Centre      | 18.9
+   38 | Scarborough Centre      | 15.1
+   39 | Scarborough-Agincourt   | 10.9
+:
+
+
+
+
+
+
